@@ -1,3 +1,6 @@
+### This is a scratch pad as I was testing different options to make the algorithm run faster.  No guarantee it all still works. 
+
+
 pz <- make_pieces()
 # Init the cube
 
