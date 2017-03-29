@@ -12,3 +12,6 @@ This program does the following:
 * the filling and trimming steps run in parallel on the host machine to take advantage multiple cores due of the high amounts of processor power needed to calculate solutions. 
 
 final result.R has the steps laid out to recalculate the final solution in a reasonable amount of time and vizualize the result using OpenGL.  
+
+
+I wasn't happy when I found this video after working on all of this: https://www.youtube.com/watch?v=S-IgYLym10o
