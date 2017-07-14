@@ -14,4 +14,7 @@ This program does the following:
 [final result.R](https://github.com/aaroncwhite/puzzleR/blob/master/final%20result.R) has the steps laid out to recalculate the final solution in a reasonable amount of time and vizualize the result using OpenGL.  
 
 
-I wasn't happy when I found this video after working on all of this: https://www.youtube.com/watch?v=S-IgYLym10o
+UPDATE:
+I keep coming back to this in an attempt to find a better solution.  The closest I've found led me on a search through bin-packing algorithms, but the main challenge with this puzzle is that ALL of the pieces must fit instead of most.  After much research, a mostly brute force method still seems to be the best approach.  
+
+I wasn't happy when I found [this video](https://www.youtube.com/watch?v=S-IgYLym10o) after working on all of this.
