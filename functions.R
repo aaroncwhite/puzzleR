@@ -156,6 +156,8 @@ fill_puzzle <- function(cube, pieces) {
 }
 
 puzzle_step <- function(cube, piece) {
+  # Take an existing cube and put the next piece in.  
+  # Returns a list of all possible options
   cubes <- lapply(test_piece(cube, piece),
                   function(j) {
                     if (!is.null(j)) place_piece(cube, j[1:3], j[[4]])
@@ -170,10 +172,13 @@ puzzle_step <- function(cube, piece) {
 trim_cubes.parallel <- function(cubes, nc=4, cl=NULL,split_size=NA, max_iter_nochange=50,
                                 lazy_stop = T, lazy_stop_point= ceiling(length(cubes)/2), sink_dir='sink/',
                                 level=1) {
+  # It turns out that there are ALOT of possibilities and evaluating all potential duplicates in sequence would take quite a long time
+  # This parallelizes the same operations in trim_cubes, albeit in a slightly more complex manner
+  
   # apply trimming in parallel
-  cubes <- cubes[sapply(cubes, function(p) !is.null(p))]
+  cubes <- cubes[sapply(cubes, function(p) !is.null(p))] # drop any NULL leafs
   n_cubes <- length(cubes)
-  cubes <- cubes[sample(1:length(cubes),length(cubes))]
+  cubes <- cubes[sample(1:length(cubes),length(cubes))] # Shuffle the cubes around (this didn't seem to do much as far as optimizing the operation)
 
   # if (missing(compare)) compare <- cubes
   if (is.na(split_size)) split_size <- ceiling(n_cubes/(log(n_cubes)*nc))
@@ -206,21 +211,27 @@ trim_cubes.parallel <- function(cubes, nc=4, cl=NULL,split_size=NA, max_iter_noc
     i <- 1
     while (T) {
       d.orig <- table(dupes)
-
+      
+      # makes a sliding window looking at i:(i+split_size) number of cubes at a time
       ind.1 <- which(dupes[i:(i+split_size)] == F) + (i-1)
       # ind.1 %<>% .[.<= n_cubes]
+      # double check that any within our window are not duplicates of eachother
       ind <- ind.1[!(cubes[ind.1] %>% trim_cubes(ret_index=T, output=F))] #%>% .[!is.na(.)]
 
-      if (length(ind) > 0) {
+      if (length(ind) > 0) { # Assuming we still have some non-duplicate values
         dupes[ind.1][!(ind.1 %in% ind)] <- T
         # splits <- calcSplits(ind, ceiling(length(ind)/nc))
+        
+        # Now in parallel, compare each cube from our window to all the other cubes we currently have generated
         dupes.ind <- foreach(j=ind, .combine=c) %dopar% {
           # source('functions.R')
 
           dupes.compared <- compare_cubes(cubes[[j]], cubes[j:n_cubes], dupes[j:n_cubes], ret_index = T)
           return(dupes.compared + (j-1) )
         } #%>% .[!(. %in% ind)]
-
+        
+        # Combine all of those values back to one T/F vector of duplicates.  If any of the parallel branches found
+        # a duplicate, it will be marked here. 
         dupes[dupes.ind[!(dupes.ind %in% ind)]%>% unique()] <- T
         # dupes[ind] <- F
       }
@@ -230,9 +241,11 @@ trim_cubes.parallel <- function(cubes, nc=4, cl=NULL,split_size=NA, max_iter_noc
 
       flush.console()
       i <- i + split_size
+      
+      # Window dressing
       cat('\rdepth',level,"-->", i, "scanned... ", d[1], 'unique...', d[2], 'duplicates...', rep(' ', 10))
 
-
+      # Some break points so we don't keep going into the ether forever
       if (all(dupes[i:n_cubes] == T) | i >= length(dupes)) {cat('\nNo unique remaining\t');break}
       if (lazy_stop & d[1] <= lazy_stop_point)  {cat('\nLazy stop point reached\t');break}
 
